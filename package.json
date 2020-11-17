@@ -1,0 +1,19 @@
+{
+    "private": true,
+    "name": "social-exchange",
+    "workspaces": [
+        "packages/*"
+    ],
+    "scripts": {
+        "bootstrap": "lerna bootstrap",
+        "build": "lerna run --parallel --stream build",
+        "dev": "lerna run --parallel --stream dev",
+        "production": "npm run build && pm2 start ecosystem.json",
+        "production-restart": "npm run build && pm2 restart ecosystem.json",
+        "start": "lerna run --parallel --stream start"
+    },
+    "dependencies": {
+        "lerna": "^3.22.1",
+        "pm2": "^4.5.0"
+    }
+}

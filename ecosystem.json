@@ -1,0 +1,12 @@
+{
+    "apps": [{
+        "name": "@social-exchange/core",
+        "script": "npm",
+        "args": "run start",
+        "kill_timeout": 25000,
+        "watch": false,
+        "env": {
+            "NODE_ENV": "production"
+        }
+    }]
+}
