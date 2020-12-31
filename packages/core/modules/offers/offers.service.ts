@@ -1,3 +1,4 @@
+import * as T from 'fp-ts/Task';
 import { pipe } from 'fp-ts/pipeable';
 import { FindConditions, In, Repository, SelectQueryBuilder } from 'typeorm';
 import { Injectable } from '@nestjs/common';
@@ -88,23 +89,16 @@ export class OffersService {
         return right(this.toJson(offer));
     }
 
-    async finishIfExecuted(offers: OfferEntity[]) {
-        const loaded = await this.find({
-            id: In(offers.map((offer) => offer.id)),
+    finishIfExecuted(offers: OfferEntity[]) {
+        if (!offers.length) return T.of(void 1);
+
+        const markAsFinished = (offer: OfferEntity): OfferEntity => ({
+            ...offer,
+            finishedAt: new Date(),
+            status: OfferStatus.finish,
         });
 
-        const executed = loaded
-            .filter((offer) => offer.countExecutions >= offer.count);
-
-        await this.offers.save(executed.map((offer) => {
-            return this.offers.create({
-                ...offer,
-                finishedAt: new Date(),
-                status: OfferStatus.finish,
-            });
-        }));
-
-        executed.forEach((offer) => {
+        const sendExecutedEvent = (offer: OfferEntity) => {
             this.eventsService.emit('offer-executed', {
                 details: { offer },
                 important: true,
@@ -112,7 +106,16 @@ export class OffersService {
                 recipient: offer.owner,
                 type: 'offer-executed',
             });
-        });
+        };
+
+        return pipe(
+            offers.map((offer) => offer.id),
+            (ids) => T.fromTask(() => this.find({ id: In(ids) })),
+            T.map((offers) => offers.filter((offer) => offer.countExecutions >= offer.count)),
+            T.map((executed) => executed.map(markAsFinished)),
+            T.chain((offers) => T.fromTask(() => this.offers.save(offers))),
+            T.map((offers) => offers.forEach(sendExecutedEvent)),
+        );
     }
 
     private async delete(initiator: User, offer: OfferEntity) {

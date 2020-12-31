@@ -24,6 +24,6 @@ export class ExecutionsController {
         @WithNetwork() network: Profile,
         @Body() body: ExecutionsCheckerOptions,
     ) {
-        return this.executionsService.check(network, body.dispensesIds);
+        return this.executionsService.check(network, body.dispensesIds)();
     }
 }
