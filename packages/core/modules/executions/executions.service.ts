@@ -141,6 +141,14 @@ export class ExecutionsService {
                 recipient: dispense.recipient,
                 type: 'execution',
             });
+
+            this.eventsService.emit('execution', {
+                details: { offerId: dispense.offer.id },
+                important: false,
+                read: false,
+                recipient: dispense.offer.ownerId,
+                type: 'execution',
+            });
         });
     }
 

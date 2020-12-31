@@ -31,12 +31,14 @@ export class ConnectionsService {
         if (!isConnected.user) this.emit('user-disconnected', connection);
     }
 
-    getConnectionsOf(profile: Profile|User) {
-        const isNetwork = 'ownerId' in profile;
+    getConnectionsOf(profile: Profile|User|number) {
+        const isProfile = typeof profile === 'number' ? false : 'ownerId' in profile;
+        const id = typeof profile === 'number' ? profile : profile.id;
+
         const isProfileConnection = (connection: Connection) => {
-            return isNetwork
-                ? connection.network.id === profile.id
-                : connection.user.id === profile.id;
+            return isProfile
+                ? connection.network.id === (profile as Profile).id
+                : connection.user.id === id;
         }
 
         return Array.from(this.connections.values())

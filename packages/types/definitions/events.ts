@@ -29,9 +29,10 @@ export type ExchangeEvent<T extends EventTypes> = {
 
     /**
      * Получатель задания. Получателем может быть как пользователь, так и
-     * отдельный профиль пользователя
+     * отдельный профиль пользователя. Если указано число, считается что
+     * это id пользователя (User'a)
      */
-    recipient: Profile|User,
+    recipient: Profile|User|number,
 }
 
 // PublicExchangeEvent можно отправить пользователю

@@ -30,8 +30,9 @@ export class EventsService {
     }
 
     private async save(event: ExchangeEvent<EventTypes>) {
-        const userId = 'ownerId' in event.recipient
-            ? event.recipient.ownerId : event.recipient.id;
+        const userId = typeof event.recipient === 'number'
+            ? event.recipient
+            : 'ownerId' in event.recipient ? event.recipient.ownerId : event.recipient.id;
         const toSave = this.events.create({
             details: event.details,
             read: false,
