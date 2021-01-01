@@ -22,7 +22,7 @@
         "@nestjs/typeorm": "^7.1.0",
         "@nestjs/websockets": "^7.4.4",
         "@ridi/object-case-converter": "^2.0.4",
-        "@social-exchange/types": "^0.0.2",
+        "@social-exchange/types": "^0.0.4",
         "@types/jwt-decode": "^2.2.1",
         "@types/node": "^14.0.27",
         "@types/node-fetch": "^2.5.7",

@@ -1,5 +1,7 @@
+import { OfferType } from '@social-exchange/types';
 import { OfferEntity } from '../offers/offer.entity';
 import { ProfileEntity } from '../profiles/profile.entity';
+
 import {
     Entity,
     Column,
@@ -19,7 +21,7 @@ export class Execution {
 
     @JoinColumn({ name: 'offer_id' })
     @ManyToOne(() => OfferEntity)
-    offer!: OfferEntity;
+    offer!: OfferEntity<OfferType>;
 
     @RelationId((execution: Execution) => execution.offer)
     offerId!: number;

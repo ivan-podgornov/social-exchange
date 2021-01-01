@@ -5,7 +5,7 @@ export enum DispenseStatus {
     banned = 'banned',
 };
 
-export type Dispense = {
+export type Dispense<OT extends OfferType = OfferType> = {
     id: number,
 
     /**
@@ -13,16 +13,16 @@ export type Dispense = {
      * того как срок выдачи закончится, сердечки не будут выданы.
      */
     expires: Date,
-    offer: Offer,
+    offer: Offer<OT>,
     reward: number,
     status: DispenseStatus,
     title: string,
 };
 
-export type TypedDispenses<T extends OfferType> = {
-    list: Dispense[],
+export type TypedDispenses<OT extends OfferType> = {
+    list: Dispense<OT>[],
     reachLimit: boolean,
-    type: T,
+    type: OT,
 };
 
 export type Dispenses = {

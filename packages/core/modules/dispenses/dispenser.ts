@@ -13,13 +13,13 @@ import {
     TypedDispenses,
     DispenseStatus,
     NetworkType,
-    Profile,
     OfferType,
+    Profile,
 } from '@social-exchange/types';
 
-export type DispenseOptions<T extends OfferType> = {
+export type DispenseOptions<OT extends OfferType> = {
     networkType: NetworkType,
-    offerType: T,
+    offerType: OT,
     recipientId: number,
     userId: number,
 };
@@ -38,7 +38,7 @@ export class Dispenser {
         private executions: Repository<Execution>,
 
         @InjectRepository(OfferEntity)
-        private offers: Repository<OfferEntity>,
+        private offers: Repository<OfferEntity<OfferType>>,
     ) {}
 
     async dispense(profile: Profile) {
@@ -62,9 +62,9 @@ export class Dispenser {
      * Возвращает список выдач определённого типа. Если лимиты позволяют, кроме
      * уже выданных заданий, выдаст ещё заданий.
      */
-    private async getDispenses<T extends OfferType>(
-        options: DispenseOptions<T>,
-    ): Promise<TypedDispenses<T>> {
+    private async getDispenses<OT extends OfferType>(
+        options: DispenseOptions<OT>,
+    ): Promise<TypedDispenses<OT>> {
         const [dispenses, executions] = await Promise.all([
             this.getProfileDispenses(options),
             this.getLastExecutions(options),
@@ -72,15 +72,15 @@ export class Dispenser {
 
         const limit = this.calculateLimit(dispenses, executions);
         const rawOffers = await this.offersSearch.search(options, limit);
-        const offers = rawOffers.map((raw) => this.offers.create(raw));
+        const offers = rawOffers.map((raw) => this.offers.create(raw) as OfferEntity<OT>);
         const newDispenses = await this.dispenses.save(
-            offers.map<DispenseEntity>((offer) => this.dispenses.create({
+            offers.map<DispenseEntity<OT>>((offer) => this.dispenses.create({
                 offer,
                 expires: new Date(Date.now() + 3.6e+6), // 3.6e+6 - час
                 recipient: { id: options.recipientId },
                 status: DispenseStatus.active,
-            })),
-        );
+            }) as DispenseEntity<OT>),
+        ) as Array<DispenseEntity<OT>>;
 
         const allDispenses = dispenses.concat(newDispenses);
         const populated = allDispenses
@@ -94,7 +94,9 @@ export class Dispenser {
     }
 
     /** Определяет какой должен быть заголовок у выдачи и награду за неё */
-    private async populateDispenseEntity(dispense: DispenseEntity): Promise<Dispense> {
+    private async populateDispenseEntity<OT extends OfferType>(
+        dispense: DispenseEntity<OT>,
+    ): Promise<Dispense<OT>> {
         const title = await this.titleResolve.resolve(dispense.offer);
         const reward = this.priceCalculator.calculate({ ...dispense.offer, count: 1 });
         return { ...dispense, title, reward };
@@ -134,7 +136,9 @@ export class Dispenser {
     }
 
     /** Возвращает список уже выданных пользователю заданий */
-    private async getProfileDispenses<T extends OfferType>(options: DispenseOptions<T>) {
+    private async getProfileDispenses<OT extends OfferType>(
+        options: DispenseOptions<OT>,
+    ) {
         const dispenses = await this.dispenses.find({
             relations: ['offer'],
             where: {
@@ -144,7 +148,7 @@ export class Dispenser {
             },
         });
 
-        return dispenses.filter((dispense) => {
+        return dispenses.filter((dispense): dispense is DispenseEntity<OT> => {
             return dispense.offer.networkType === options.networkType
                 && dispense.offer.type === options.offerType;
         });
