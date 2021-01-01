@@ -10,8 +10,8 @@ import {
     RelationId,
 } from 'typeorm';
 
-@Entity()
-export class Network implements Profile {
+@Entity({ name: 'profiles' })
+export class ProfileEntity implements Profile {
     @PrimaryGeneratedColumn()
     id!: number;
 
@@ -22,7 +22,7 @@ export class Network implements Profile {
     @OneToOne(() => UserEntity)
     owner!: UserEntity;
 
-    @RelationId((network: Network) => network.owner)
+    @RelationId((profile: Profile) => profile.owner)
     ownerId!: number;
 
     @Column()

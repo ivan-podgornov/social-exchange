@@ -5,7 +5,7 @@ import { pipe } from 'fp-ts/pipeable';
 import fetch from 'node-fetch';
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { NetworksService } from '../networks/networks.service';
+import { ProfilesService } from '../profiles/profiles.service';
 import { UsersService } from '../users/users.service';
 
 import {
@@ -28,7 +28,7 @@ type UloginUser = {
 export class AuthService {
     constructor(
         private jwtService: JwtService,
-        private networksService: NetworksService,
+        private profilesService: ProfilesService,
         private usersService: UsersService,
     ) {}
 
@@ -44,7 +44,7 @@ export class AuthService {
             this.resolveToken(host, token),
             TE.map((uloginUser) => this.uloginUserToIncognito(uloginUser)),
             TE.chain((incognito) => pipe(
-                TE.fromTask<Error, Option<User>>(this.networksService.findOwner(incognito)),
+                TE.fromTask<Error, Option<User>>(this.profilesService.findOwner(incognito)),
                 TE.chain((optionUser) => doAuth(incognito, optionUser)),
             )),
         );
@@ -59,7 +59,7 @@ export class AuthService {
     private register(incognito: Incognito): Task<string> {
         return async () => {
             const user = await this.usersService.create();
-            const profile = await this.networksService.create(incognito, user);
+            const profile = await this.profilesService.create(incognito, user);
             return this.login(profile, user);
         };
     }

@@ -1,7 +1,7 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { Incognito, Profile, User } from '@social-exchange/types';
 import { JwtGuard } from '../auth/jwt.guard';
-import { Network as WithNetwork } from '../networks/network.decorator';
+import { Profile as WithProfile } from '../profiles/profile.decorator';
 import { User as WithUser } from '../users/user.decorator';
 
 @Controller('users')
@@ -9,7 +9,7 @@ import { User as WithUser } from '../users/user.decorator';
 export class UsersController {
     @Get()
     get(
-        @WithNetwork() profile: Profile,
+        @WithProfile() profile: Profile,
         @WithUser() user: User,
     ): User & Incognito {
         return {

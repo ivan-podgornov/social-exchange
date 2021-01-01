@@ -4,8 +4,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { ConnectionsService } from '../connections/connections.service';
 import { Execution } from '../executions/execution.entity';
-import { Network } from '../networks/network.entity';
 import { OfferEntity } from '../offers/offer.entity';
+import { ProfileEntity } from '../profiles/profile.entity';
 import { EventsService } from '../events/events.service';
 import { DispenseEntity } from './dispense.entity';
 import { Dispenser } from './dispenser';
@@ -14,6 +14,7 @@ import {
     DispenseStatus,
     NetworkType,
     OfferType,
+    Profile,
 } from '@social-exchange/types';
 
 type Options = {
@@ -31,8 +32,8 @@ export class DispensesTask {
         private dispenser: Dispenser,
         private eventsService: EventsService,
 
-        @InjectRepository(Network)
-        private networks: Repository<Network>,
+        @InjectRepository(ProfileEntity)
+        private profiles: Repository<Profile>,
     ) {}
 
     @Interval('dispenses', 10000)
@@ -86,34 +87,34 @@ export class DispensesTask {
 
     /** Ищет посетителей, которые нуждаются в заданиях для выполнения */
     private async findNeedies(options: Options) {
-        const networksIds = this.connectionsService.connectedNetworks
-            .filter((network) => network.type === options.networkType)
-            .map((network) => network.id);
-        if (!networksIds.length) return [];
+        const profilesIds = this.connectionsService.connectedProfiles
+            .filter((profile) => profile.type === options.networkType)
+            .map((profile) => profile.id);
+        if (!profilesIds.length) return [];
 
-        const rawVisitors: Network[] = await this.networks
-            .createQueryBuilder('network')
-            .select('network.*')
+        const rawVisitors: Profile[] = await this.profiles
+            .createQueryBuilder('profile')
+            .select('profile.*')
             .addSelect('IFNULL(dispense.dispensesCount, 0)', 'dispensesCount')
             .addSelect('IFNULL(execution.executionsCount, 0)', 'executionsCount')
             .addSelect('IFNULL(lastExecution.executionTimeout, 1000)', 'executionTimeout')
             .leftJoin(
                 this.dispensesCount(options),
                 'dispense',
-                'network.id = dispense.recipient_id',
+                'profile.id = dispense.recipient_id',
             )
             .leftJoin(
                 this.executionsCount(options),
                 'execution',
-                'network.id = execution.profile_id',
+                'profile.id = execution.profile_id',
             )
             .leftJoin(
                 this.lastExecutionTimeout(options),
                 'lastExecution',
-                'network.id = lastExecution.profile_id',
+                'profile.id = lastExecution.profile_id',
             )
-            .where('network.id IN (:networksIds)', { networksIds })
-            .andWhere('network.type = :networkType', options)
+            .where('profile.id IN (:profilesIds)', { profilesIds })
+            .andWhere('profile.type = :networkType', options)
             .andWhere('IFNULL(executionTimeout, 1000) > 30')
             .andWhere('IFNULL(dispensesCount, 0) < 3')
             .andWhere('IFNULL(dispensesCount + executionsCount, 0) < 30')
@@ -121,9 +122,9 @@ export class DispensesTask {
             .getRawMany();
 
         return rawVisitors.map((visitor) => {
-            const network = this.networks.create(visitor);
-            network.ownerId = visitor.ownerId;
-            return network;
+            const profile = this.profiles.create(visitor);
+            profile.ownerId = visitor.ownerId;
+            return profile;
         });
     }
 

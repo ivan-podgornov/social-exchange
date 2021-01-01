@@ -16,7 +16,7 @@ export class DispensesService {
         private dispenses: Repository<DispenseEntity>,
     ) {
         this.connections.on('profile-disconnected', (connection) => {
-            this.removeProfileDispenses(connection.network);
+            this.removeProfileDispenses(connection.profile);
         });
     }
 

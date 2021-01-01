@@ -4,8 +4,8 @@ import { ConnectionsModule } from '../connections/connections.module';
 import { EventsModule } from '../events/events.module';
 import { Execution } from '../executions/execution.entity';
 import { OfferEntity } from '../offers/offer.entity';
-import { NetworksModule } from '../networks/networks.module';
 import { PriceCalculatorModule } from '../price-calculator/price-calculator.module';
+import { ProfilesModule } from '../profiles/profiles.module';
 import { TitleResolverModule } from '../title-resolver/title-resolver.module';
 import { OffersSearch } from './offers-search';
 import { DispensesController } from './dispenses.controller';
@@ -29,8 +29,8 @@ import { DispenseEntity } from './dispense.entity';
     imports: [
         ConnectionsModule,
         EventsModule,
-        NetworksModule,
         PriceCalculatorModule,
+        ProfilesModule,
         TitleResolverModule,
         TypeOrmModule.forFeature([
             DispenseEntity,

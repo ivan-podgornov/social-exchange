@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThan, Repository, Raw } from 'typeorm';
 import { Execution } from '../executions/execution.entity';
-import { Network } from '../networks/network.entity';
 import { OfferEntity } from '../offers/offer.entity';
 import { PriceCalculator } from '../price-calculator/price-calculator';
 import { TitleResolver } from '../title-resolver/title-resolver.service';
@@ -14,6 +13,7 @@ import {
     TypedDispenses,
     DispenseStatus,
     NetworkType,
+    Profile,
     OfferType,
 } from '@social-exchange/types';
 
@@ -41,7 +41,7 @@ export class Dispenser {
         private offers: Repository<OfferEntity>,
     ) {}
 
-    async dispense(profile: Network) {
+    async dispense(profile: Profile) {
         const options: Omit<DispenseOptions<OfferType>, 'offerType'> = {
             networkType: profile.type,
             recipientId: profile.id,

@@ -4,39 +4,44 @@ import { Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { left, right } from 'fp-ts/Either';
-import { Network } from './network.entity';
-import { Incognito, NetworkType, User } from '@social-exchange/types';
-import { UserEntity } from 'modules/users/user.entity';
+import { ProfileEntity } from './profile.entity';
+
+import {
+    Incognito,
+    NetworkType,
+    Profile,
+    User,
+} from '@social-exchange/types';
 
 @Injectable()
-export class NetworksService {
+export class ProfilesService {
     constructor(
-        @InjectRepository(Network)
-        private networks: Repository<Network>,
+        @InjectRepository(ProfileEntity)
+        private profiles: Repository<Profile>,
     ) {}
 
     /** Создаёт запись о социальной сети пользователя */
     async create(network: Incognito, owner: User) {
-        const userNetwork = this.networks.create({ ...network });
-        userNetwork.owner = owner;
-        await this.networks.save(userNetwork);
-        return userNetwork;
+        const profile = this.profiles.create({ ...network });
+        profile.owner = owner;
+        await this.profiles.save(profile);
+        return profile;
     }
 
     /** Ищет владельца указанного профиля социальной сети */
-    findOwner(network: Incognito): Task<Option<User>> {
+    findOwner(incognito: Incognito): Task<Option<User>> {
         return async () => {
-            const uid = network.uid;
+            const uid = incognito.uid;
             const options = { relations: ['owner'] };
-            const profile = await this.networks.findOne({ uid }, options);
+            const profile = await this.profiles.findOne({ uid }, options);
             return profile ? some(profile.owner) : none;
         };
     }
 
     /** Ищет социальную сеть по id пользователя в этой сети */
     async findByUserId(type: NetworkType, uid: number) {
-        const network = await this.networks.findOne({ type, uid });
-        if (!network) return left(null);
-        return right(network);
+        const profile = await this.profiles.findOne({ type, uid });
+        if (!profile) return left(null);
+        return right(profile);
     }
 };

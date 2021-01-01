@@ -2,7 +2,7 @@ import { Profile, User } from '@social-exchange/types';
 
 export interface Connection {
     id: string,
-    network: Profile,
+    profile: Profile,
     user: User,
 
     emitEvent: (name: string, payload: object) => void,

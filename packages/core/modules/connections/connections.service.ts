@@ -24,10 +24,10 @@ export class ConnectionsService {
         if (!connection) return;
         this.connections.delete(connection.id);
 
-        const { network, user } = connection;
-        const isConnected = this.isConnected(network, user);
+        const { profile, user } = connection;
+        const isConnected = this.isConnected(profile, user);
 
-        if (!isConnected.network) this.emit('profile-disconnected', connection);
+        if (!isConnected.profile) this.emit('profile-disconnected', connection);
         if (!isConnected.user) this.emit('user-disconnected', connection);
     }
 
@@ -37,7 +37,7 @@ export class ConnectionsService {
 
         const isProfileConnection = (connection: Connection) => {
             return isProfile
-                ? connection.network.id === (profile as Profile).id
+                ? connection.profile.id === (profile as Profile).id
                 : connection.user.id === id;
         }
 
@@ -50,25 +50,25 @@ export class ConnectionsService {
     }
 
     /** Возвращает список подключенных профилей */
-    get connectedNetworks() {
-        const networksMap = Array.from(this.connections.values())
+    get connectedProfiles() {
+        const profilesMap = Array.from(this.connections.values())
             .reduce<Map<number, Profile>>((map, connection) => {
-                return map.set(connection.network.id, connection.network);
+                return map.set(connection.profile.id, connection.profile);
             }, new Map());
-        return Array.from(networksMap.values());
+        return Array.from(profilesMap.values());
     }
 
     /**
      * Возвращает объект, который содержит информацию о том, подключен ли
      * указанный пользователь и указанный профиль.
      */
-    private isConnected(network: Profile, user: User) {
+    private isConnected(profile: Profile, user: User) {
         const userConnections = this.getConnectionsOf(user);
-        const networkConnections = userConnections
-            .filter((connection) => connection.network.id === network.id);
+        const profileConnections = userConnections
+            .filter((connection) => connection.profile.id === profile.id);
 
         return {
-            network: networkConnections.length > 0,
+            profile: profileConnections.length > 0,
             user: userConnections.length > 0,
         };
     }
