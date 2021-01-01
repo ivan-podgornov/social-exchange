@@ -10,8 +10,8 @@ export enum OfferStatus {
 export enum OfferType {
     likes = 'likes',
     reposts = 'reposts',
+    friends = 'friends',
     followers = 'followers',
-    subscribes = 'subscribes',
 };
 
 export type Offer = {

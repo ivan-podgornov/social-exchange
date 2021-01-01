@@ -19,8 +19,8 @@ export class VkExecutionsChecker {
         const checkers: Checkers = {
             [OfferType.likes]: this.isLiked.bind(this),
             [OfferType.reposts]: this.isReposted.bind(this),
-            [OfferType.followers]: this.isFollow.bind(this),
-            [OfferType.subscribes]: this.isSubscribe.bind(this),
+            [OfferType.friends]: this.doesSendFriendRequest.bind(this),
+            [OfferType.followers]: this.isFollower.bind(this),
         };
 
         return pipe(
@@ -79,7 +79,7 @@ export class VkExecutionsChecker {
     }
 
     /** Проверяет, подписан ли пользователь на другого пользователя */
-    private isFollow(profile: Profile, resource: VkResource): T.Task<boolean> {
+    private doesSendFriendRequest(profile: Profile, resource: VkResource): T.Task<boolean> {
         return () => new Promise((resolve, reject) => {
             const options = { user_id: resource.objectId };
             const followersStream = this.vkService.collect
@@ -117,7 +117,7 @@ export class VkExecutionsChecker {
     }
 
     /** Проверяет, состоит ли пользователь в сообществе */
-    private isSubscribe(profile: Profile, resource: VkResource): T.Task<boolean> {
+    private isFollower(profile: Profile, resource: VkResource): T.Task<boolean> {
         return () => new Promise((resolve, reject) => {
             const members = this.vkService.collect.groups.getMembers<number>({
                 group_id: resource.objectId,

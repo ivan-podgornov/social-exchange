@@ -1,9 +1,9 @@
 import { LikesOfferChecker } from './likes-offer-checker';
 
-export class SubscribesOfferChecker extends LikesOfferChecker {
-    protected supported = ['group'];
+export class FriendsOfferChecker extends LikesOfferChecker {
+    protected supported = ['user'];
     protected messages = {
-        unsupported: 'Указанная Вами ссылка не ведёт на страницу группы',
+        unsupported: 'Указанная Вами ссылка не ведёт на страницу пользователя',
         bannedUser: 'Пользователь заблокирован',
         closedUser: 'Страница пользователя закрыта',
         deletedUser: 'Пользователь удалён',

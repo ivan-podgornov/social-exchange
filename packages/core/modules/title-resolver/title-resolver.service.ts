@@ -21,8 +21,8 @@ export class TitleResolver {
         const titles: Titles = {
             [OfferType.likes]: 'Лайкни',
             [OfferType.reposts]: 'Репостни',
+            [OfferType.friends]: 'Подпишись',
             [OfferType.followers]: 'Подпишись',
-            [OfferType.subscribes]: 'Подпишись',
         };
 
         return titles[offer.type];

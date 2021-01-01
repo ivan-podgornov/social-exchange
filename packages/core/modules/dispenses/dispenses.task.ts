@@ -51,19 +51,19 @@ export class DispensesTask {
         });
     }
 
-    @Interval('dispenses-followers', 20000)
+    @Interval('dispenses-friends', 20000)
     dispenseFollowersNeedy() {
         this.dispenseNeedy({
             networkType: NetworkType.vk,
-            offerType: OfferType.followers,
+            offerType: OfferType.friends,
         });
     }
 
-    @Interval('dispenses-subscribes', 25000)
+    @Interval('dispenses-followers', 25000)
     dispenseSubscibesNeedy() {
         this.dispenseNeedy({
             networkType: NetworkType.vk,
-            offerType: OfferType.subscribes,
+            offerType: OfferType.followers,
         });
     }
 

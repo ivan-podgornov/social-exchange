@@ -28,6 +28,6 @@ export type TypedDispenses<T extends OfferType> = {
 export type Dispenses = {
     likes: TypedDispenses<OfferType.likes>,
     reposts: TypedDispenses<OfferType.reposts>,
+    friends: TypedDispenses<OfferType.friends>,
     followers: TypedDispenses<OfferType.followers>,
-    subscribes: TypedDispenses<OfferType.subscribes>,
 };

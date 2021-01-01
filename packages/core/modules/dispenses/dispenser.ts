@@ -48,14 +48,14 @@ export class Dispenser {
             userId: profile.ownerId,
         };
 
-        const [likes, reposts, followers, subscribes] = await Promise.all([
+        const [likes, reposts, friends, followers] = await Promise.all([
             this.getDispenses({ ...options, offerType: OfferType.likes }),
             this.getDispenses({ ...options, offerType: OfferType.reposts }),
+            this.getDispenses({ ...options, offerType: OfferType.friends }),
             this.getDispenses({ ...options, offerType: OfferType.followers }),
-            this.getDispenses({ ...options, offerType: OfferType.subscribes }),
         ]);
 
-        return { likes, reposts, followers, subscribes };
+        return { likes, reposts, friends, followers };
     }
 
     /**

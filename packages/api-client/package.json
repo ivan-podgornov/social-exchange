@@ -1,14 +1,14 @@
 {
     "name": "@social-exchange/api-client",
     "description": "Api client for social-exchange",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "main": "dist/index.js",
     "scripts": {
         "build": "tsc",
         "prepublishOnly": "npm run build"
     },
     "dependencies": {
-        "@social-exchange/types": "^0.0.2",
+        "@social-exchange/types": "^0.0.3",
         "@types/qs": "^6.9.5",
         "@types/socket.io-client": "^1.4.34",
         "cross-fetch": "^3.0.6",
