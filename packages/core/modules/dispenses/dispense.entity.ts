@@ -1,6 +1,6 @@
-import { Dispense, DispenseStatus } from '@social-exchange/types';
+import { Dispense, DispenseStatus, OfferType } from '@social-exchange/types';
 import { OfferEntity } from '../offers/offer.entity';
-import { Network } from '../networks/network.entity';
+import { ProfileEntity } from '../profiles/profile.entity';
 
 import {
     Column,
@@ -12,7 +12,9 @@ import {
 } from 'typeorm';
 
 @Entity({ name: 'dispenses' })
-export class DispenseEntity implements Omit<Dispense, 'title'|'reward'> {
+export class DispenseEntity<OT extends OfferType = OfferType>
+    implements Omit<Dispense<OT>, 'title'|'reward'>
+{
     @PrimaryGeneratedColumn()
     id!: number;
 
@@ -21,16 +23,16 @@ export class DispenseEntity implements Omit<Dispense, 'title'|'reward'> {
 
     @JoinColumn({ name: 'offer_id' })
     @ManyToOne(() => OfferEntity)
-    offer!: OfferEntity;
+    offer!: OfferEntity<OT>;
 
-    @RelationId((dispense: DispenseEntity) => dispense.offer)
+    @RelationId((dispense: DispenseEntity<OT>) => dispense.offer)
     offerId!: number;
 
     @JoinColumn({ name: 'recipient_id' })
-    @ManyToOne(() => Network)
-    recipient!: Network;
+    @ManyToOne(() => ProfileEntity)
+    recipient!: ProfileEntity;
 
-    @RelationId((dispense: DispenseEntity) => dispense.recipient)
+    @RelationId((dispense: DispenseEntity<OT>) => dispense.recipient)
     recipientId!: number;
 
     @Column({ type: 'enum', enum: DispenseStatus })

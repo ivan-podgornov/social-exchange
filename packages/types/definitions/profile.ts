@@ -1,13 +1,13 @@
 import { NetworkType } from './network';
 import { User } from './user';
 
-export type Profile = {
+export type Profile<NT extends NetworkType = NetworkType> = {
     id: number,
     name: string,
     owner: Pick<User, 'id'|'balance'>,
     ownerId: number,
     photo: string,
-    type: NetworkType,
+    type: NT,
     /** id пользователя в социальной сети */
     uid: number,
 };

@@ -8,8 +8,8 @@ export class PriceCalculator {
         const prices: Prices = {
             [OfferType.likes]: 1,
             [OfferType.reposts]: 2,
-            [OfferType.followers]: 3,
-            [OfferType.subscribes]: 4,
+            [OfferType.friends]: 3,
+            [OfferType.followers]: 4,
         };
 
         return prices[options.type] * options.count;

@@ -3,7 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
-import { NetworksModule } from '../networks/networks.module';
+import { ProfilesModule } from '../profiles/profiles.module';
 import { UsersModule } from '../users/users.module';
 import { jwtOptions } from './jwt-options';
 
@@ -12,7 +12,7 @@ import { jwtOptions } from './jwt-options';
     exports: [JwtStrategy],
     providers: [AuthService, JwtStrategy],
     imports: [
-        NetworksModule,
+        ProfilesModule,
         UsersModule,
         JwtModule.register(jwtOptions),
     ],

@@ -3,6 +3,7 @@ import type {
     OfferConstructorOptions,
     OfferCreatedResult,
     OfferDeletedResult,
+    OfferType,
 } from '@social-exchange/types';
 
 type TouchOptions = {
@@ -11,7 +12,7 @@ type TouchOptions = {
 
 export type Offers = {
     get(): Array<Offer>,
-    post(options: OfferConstructorOptions ): OfferCreatedResult,
+    post<OT extends OfferType>(options: OfferConstructorOptions<OT>): OfferCreatedResult<OT>,
     put(options: Partial<Offer> & TouchOptions): Offer,
-    delete(options: {} & TouchOptions): OfferDeletedResult,
+    delete(options: {} & TouchOptions): OfferDeletedResult<OfferType>,
 };

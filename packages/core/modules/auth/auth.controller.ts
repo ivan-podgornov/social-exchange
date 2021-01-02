@@ -1,4 +1,6 @@
-import { getOrElseW, toError } from 'fp-ts/Either';
+import * as TE from 'fp-ts/TaskEither';
+import { of } from 'fp-ts/Task';
+import { pipe } from 'fp-ts/pipeable';
 import { AuthService } from './auth.service';
 
 import {
@@ -39,9 +41,13 @@ export class AuthController {
             return redirectWithError(message);
         }
 
-        const jwt = await this.authService.auth(query.host, token);
-        const jwtToken = getOrElseW(toError)(jwt);
         const host = decodeURI(query.host);
-        return { url: `${host}?token=${jwtToken}` };
+        return pipe(
+            this.authService.auth2(host, token),
+            TE.fold(
+                (error: Error) => of(redirectWithError(error.message)),
+                (token: string) => of(({ url: `${host}?token=${token}` })),
+            ),
+        )();
     }
 };

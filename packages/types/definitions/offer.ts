@@ -10,11 +10,11 @@ export enum OfferStatus {
 export enum OfferType {
     likes = 'likes',
     reposts = 'reposts',
+    friends = 'friends',
     followers = 'followers',
-    subscribes = 'subscribes',
 };
 
-export type Offer = {
+export type Offer<OT extends OfferType = OfferType> = {
     id: number,
     count: number,
     countExecutions: number,
@@ -22,22 +22,22 @@ export type Offer = {
     link: string,
     networkType: NetworkType,
     status: OfferStatus,
-    type: OfferType,
+    type: OT,
 };
 
-export type OfferConstructorOptions = {
+export type OfferConstructorOptions<OT extends OfferType = OfferType> = {
     count: number,
     link: string,
     networkType: NetworkType,
-    type: OfferType,
+    type: OT,
 };
 
-export type OfferCreatedResult = {
+export type OfferCreatedResult<OT extends OfferType> = {
     price: number,
-    offer: Offer,
+    offer: Offer<OT>,
 };
 
-export type OfferDeletedResult = {
+export type OfferDeletedResult<OT extends OfferType> = {
     compensation: number,
-    offer: Offer,
+    offer: Offer<OT>,
 };

@@ -3,14 +3,14 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, ForbiddenException } from '@nestjs/common';
 import { JwtPayload } from '@social-exchange/types';
-import { NetworksService } from '../networks/networks.service';
+import { ProfilesService } from '../profiles/profiles.service';
 import { UsersService } from '../users/users.service';
 import { jwtOptions } from './jwt-options';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
     constructor(
-        private networksService: NetworksService,
+        private networksService: ProfilesService,
         private usersService: UsersService,
     ) {
         super({
@@ -34,10 +34,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
         const user = getOrElseW((left: null) => left)(userEither);
         if (user === null) throw new ForbiddenException();
-        const network = getOrElseW((left: null) => left)(networkEither);
-        if (network === null) throw new ForbiddenException();
-        network.owner = user;
+        const profile = getOrElseW((left: null) => left)(networkEither);
+        if (profile === null) throw new ForbiddenException();
+        profile.owner = user;
 
-        return { user, network };
+        return { user, profile };
     }
 }

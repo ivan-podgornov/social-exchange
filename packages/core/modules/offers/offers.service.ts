@@ -1,3 +1,4 @@
+import * as T from 'fp-ts/Task';
 import { pipe } from 'fp-ts/pipeable';
 import { FindConditions, In, Repository, SelectQueryBuilder } from 'typeorm';
 import { Injectable } from '@nestjs/common';
@@ -16,6 +17,7 @@ import {
     Offer,
     OfferConstructorOptions,
     OfferStatus,
+    OfferType,
     User,
 } from '@social-exchange/types';
 
@@ -38,13 +40,13 @@ export class OffersService {
         private usersService: UsersService,
 
         @InjectRepository(OfferEntity)
-        private offers: Repository<OfferEntity>,
+        private offers: Repository<OfferEntity<OfferType>>,
     ) {}
 
-    async create(options: OfferConstructorOptions, owner: User) {
+    async create<OT extends OfferType>(options: OfferConstructorOptions<OT>, owner: User) {
         const offer = await this.offersCreatorService.construct(options, owner);
-        type Result = Either<Error, { offer: Offer, price: number }>;
-        const afterCreating = async (entity: OfferEntity): Promise<Result> => {
+        type Result = Either<Error, { offer: Offer<OT>, price: number }>;
+        const afterCreating = async (entity: OfferEntity<OT>): Promise<Result> => {
             const offer = this.toJson(entity);
             const price = this.priceCalculator.calculate(offer);
             await this.usersService.takeHearts(owner)(price);
@@ -88,23 +90,16 @@ export class OffersService {
         return right(this.toJson(offer));
     }
 
-    async finishIfExecuted(offers: OfferEntity[]) {
-        const loaded = await this.find({
-            id: In(offers.map((offer) => offer.id)),
+    finishIfExecuted(offers: OfferEntity<OfferType>[]) {
+        if (!offers.length) return T.of(void 1);
+
+        const markAsFinished = (offer: OfferEntity<OfferType>): OfferEntity<OfferType> => ({
+            ...offer,
+            finishedAt: new Date(),
+            status: OfferStatus.finish,
         });
 
-        const executed = loaded
-            .filter((offer) => offer.countExecutions >= offer.count);
-
-        await this.offers.save(executed.map((offer) => {
-            return this.offers.create({
-                ...offer,
-                finishedAt: new Date(),
-                status: OfferStatus.finish,
-            });
-        }));
-
-        executed.forEach((offer) => {
+        const sendExecutedEvent = (offer: OfferEntity<OfferType>) => {
             this.eventsService.emit('offer-executed', {
                 details: { offer },
                 important: true,
@@ -112,10 +107,19 @@ export class OffersService {
                 recipient: offer.owner,
                 type: 'offer-executed',
             });
-        });
+        };
+
+        return pipe(
+            offers.map((offer) => offer.id),
+            (ids) => T.fromTask(() => this.find({ id: In(ids) })),
+            T.map((offers) => offers.filter((offer) => offer.countExecutions >= offer.count)),
+            T.map((executed) => executed.map(markAsFinished)),
+            T.chain((offers) => T.fromTask(() => this.offers.save(offers))),
+            T.map((offers) => offers.forEach(sendExecutedEvent)),
+        );
     }
 
-    private async delete(initiator: User, offer: OfferEntity) {
+    private async delete<OT extends OfferType>(initiator: User, offer: OfferEntity<OT>) {
         const count = offer.count - offer.countExecutions;
         const options = { ...offer, count };
         const compensation = this.priceCalculator.calculate(options);
@@ -132,8 +136,8 @@ export class OffersService {
         });
     }
 
-    private async find(parameters: FindConditions<OfferEntity>) {
-        type RawOffer = OfferEntity & {
+    private async find(parameters: FindConditions<OfferEntity<OfferType>>) {
+        type RawOffer = OfferEntity<OfferType> & {
             countExecutions: string,
             owner_id: string,
             owner_balance: string,
@@ -143,7 +147,7 @@ export class OffersService {
             .createQueryBuilder('offer')
             .select('offer.*')
             .addSelect('IFNULL(COUNT(executions.offer_id), 0)', 'countExecutions')
-            .leftJoin((qb: SelectQueryBuilder<OfferEntity>) =>
+            .leftJoin((qb: SelectQueryBuilder<OfferEntity<OfferType>>) =>
                 qb
                     .select('execution.id, execution.offer_id')
                     .from(Execution, 'execution'),
@@ -155,7 +159,7 @@ export class OffersService {
             .groupBy('offer.id, executions.offer_id')
             .getRawMany();
 
-        return rawOffers.map<OfferEntity>((raw) => {
+        return rawOffers.map<OfferEntity<OfferType>>((raw) => {
             const ownerId = parseInt(raw['owner_id'], 10);
             const offer = this.offers.create(raw);
             offer.countExecutions = parseInt(raw.countExecutions, 10);
@@ -182,7 +186,7 @@ export class OffersService {
 
     private canChangeStatus(
         initiator: User,
-        offer: OfferEntity,
+        offer: OfferEntity<OfferType>,
         newStatus: OfferStatus,
     ) {
         const isFinished = offer.status === OfferStatus.finish;
@@ -197,7 +201,7 @@ export class OffersService {
         return right(newStatus);
     }
 
-    toJson(offer: OfferEntity): Offer {
+    toJson<OT extends OfferType>(offer: OfferEntity<OT>): Offer<OT> {
         const { counter, objectCreated, owner, ownerId, ...result } = offer;
         return result;
     }

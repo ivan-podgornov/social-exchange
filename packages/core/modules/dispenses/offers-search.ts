@@ -17,7 +17,7 @@ export class OffersSearch {
         private executions: Repository<Execution>,
 
         @InjectRepository(OfferEntity)
-        private offers: Repository<OfferEntity>,
+        private offers: Repository<OfferEntity<OfferType>>,
     ) {}
 
     /**
@@ -25,12 +25,12 @@ export class OffersSearch {
      * социальной сетью, которые не принадлежат и не выдавались получателю;
      * которые не достигли лимита
      */
-    search<T extends OfferType>(options: DispenseOptions<T>, limit: number) {
+    search<OT extends OfferType>(options: DispenseOptions<OT>, limit: number) {
         return this.offers.createQueryBuilder('offer')
             .select('offer.*')
             .addSelect('IFNULL(dispenses_count.count, 0)', 'dispenses_count')
             .addSelect('IFNULL(executions_count.count, 0)', 'executions_count')
-            .innerJoin((qb: SelectQueryBuilder<OfferEntity>) => qb
+            .innerJoin((qb: SelectQueryBuilder<OfferEntity<OT>>) => qb
                 .select('link')
                 .addSelect('MIN(created_at)', 'min_created_at')
                 .from(OfferEntity, 'min')
@@ -42,7 +42,7 @@ export class OffersSearch {
                 'dispenses_count',
                 'offer.link = dispenses_count.link',
             )
-            .leftJoin((qb: SelectQueryBuilder<OfferEntity>) => qb
+            .leftJoin((qb: SelectQueryBuilder<OfferEntity<OT>>) => qb
                 .select('execution.id, execution.offer_id')
                 .addSelect('COUNT(execution.offer_id)', 'count')
                 .from(Execution, 'execution')
@@ -70,7 +70,7 @@ export class OffersSearch {
             .setParameters(options)
             .orderBy('RAND()')
             .limit(limit)
-            .getRawMany() as Promise<OfferEntity[]>;
+            .getRawMany() as Promise<OfferEntity<OT>[]>;
     }
 
     /** Возвращает SQL формулу для расчёта лимита */

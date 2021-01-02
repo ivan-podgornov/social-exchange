@@ -1,7 +1,7 @@
 {
     "name": "@social-exchange/types",
     "description": "Type defenitions for social-exchange",
-    "version": "0.0.2",
+    "version": "0.0.4",
     "main": "dist/index.js",
     "scripts": {
         "prebuild": "npm run clean",

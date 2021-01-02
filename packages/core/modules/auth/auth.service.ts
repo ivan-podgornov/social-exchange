@@ -1,7 +1,11 @@
+import * as TE from 'fp-ts/TaskEither';
+import { Option, fold } from 'fp-ts/Option';
+import { Task } from 'fp-ts/Task';
+import { pipe } from 'fp-ts/pipeable';
 import fetch from 'node-fetch';
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { NetworksService } from '../networks/networks.service';
+import { ProfilesService } from '../profiles/profiles.service';
 import { UsersService } from '../users/users.service';
 
 import {
@@ -10,15 +14,6 @@ import {
     NetworkType,
     User,
 } from '@social-exchange/types';
-
-import {
-    chain,
-    getOrElseW,
-    isRight,
-    left,
-    right,
-    toError,
-} from 'fp-ts/Either';
 
 type UloginNetwork = 'vkontakte';
 type UloginUser = {
@@ -33,37 +28,40 @@ type UloginUser = {
 export class AuthService {
     constructor(
         private jwtService: JwtService,
-        private networksService: NetworksService,
+        private profilesService: ProfilesService,
         private usersService: UsersService,
     ) {}
 
-    /** Проводит авторизацию пользователя через uLogin */
-    async auth(host: string, token: string) {
-        const uloginUserEither = await this.resolveToken(host, token);
-        const uloginUser = getOrElseW(toError)(uloginUserEither);
-        if (uloginUser instanceof Error) return left(uloginUser);
-
-        const networkType = this.translateUloginNetwork(uloginUser.network);
-        const incognito = this.uloginUserToIncognito(uloginUser, networkType);
-        const user = await this.networksService.findOwner(incognito);
-
-        return isRight(user)
-            ? chain(this.login(incognito))(user)
-            : this.register(incognito);
-    }
-
-    private login(incognito: Incognito) {
-        return (user: User) => {
-            const { photo, ...networkPayload } = incognito;
-            const payload: JwtPayload = { ...networkPayload, id: user.id };
-            return right(this.jwtService.sign(payload));
+    auth2(host: string, token: string) {
+        const doAuth = (incognito: Incognito, optionUser: Option<User>) => {
+            return fold(
+                () => TE.fromTask<Error, string>(this.register(incognito)),
+                (user: User) => TE.of(this.login(incognito, user)),
+            )(optionUser);
         };
+
+        return pipe(
+            this.resolveToken(host, token),
+            TE.map((uloginUser) => this.uloginUserToIncognito(uloginUser)),
+            TE.chain((incognito) => pipe(
+                TE.fromTask<Error, Option<User>>(this.profilesService.findOwner(incognito)),
+                TE.chain((optionUser) => doAuth(incognito, optionUser)),
+            )),
+        );
     }
 
-    private async register(incognito: Incognito) {
-        const user = await this.usersService.create();
-        const userNetwork = await this.networksService.create(incognito, user);
-        return this.login(userNetwork)(user);
+    private login(incognito: Incognito, user: User) {
+        const { photo, ...networkPayload } = incognito;
+        const payload: JwtPayload = { ...networkPayload, id: user.id };
+        return this.jwtService.sign(payload);
+    }
+
+    private register(incognito: Incognito): Task<string> {
+        return async () => {
+            const user = await this.usersService.create();
+            const profile = await this.profilesService.create(incognito, user);
+            return this.login(profile, user);
+        };
     }
 
     /**
@@ -71,29 +69,38 @@ export class AuthService {
      * uLogin и если host указан правильный, uLogin вернёт информацию об
      * авторизовавшемся пользователе
      */
-    private async resolveToken(host: string, token: string) {
-        type ErrorResponse = { error: string; };
-        const url = `http://ulogin.ru/token.php?host=${host}&token=${token}`;
-        const response = await fetch(url);
-        const body: ErrorResponse|UloginUser = await response.json();
+    private resolveToken(host: string, token: string) {
+        type ErrorResponse = { error: string };
+        type Body = ErrorResponse|UloginUser;
 
-        return ('error' in body)
-            ? left(new Error(body.error))
-            : right(body);
+        const sendRequest = (url: string): Task<Body> => async () => {
+            const response = await fetch(url);
+            const body: Body = await response.json();
+            return body;
+        };
+
+        const checkError = (body: Body): TE.TaskEither<Error, UloginUser> => {
+            return 'error' in body
+                ? TE.left(new Error(body.error))
+                : TE.right(body);
+        };
+
+        return pipe(
+            `http://ulogin.ru/token.php?host=${host}&token=${token}`,
+            (url) => TE.fromTask<Error, Body>(sendRequest(url)),
+            TE.chain(checkError),
+        );
     }
 
     private translateUloginNetwork(network: UloginNetwork): NetworkType {
-        type Translator = { [network: string]: NetworkType };
-        const translates: Translator = { 'vkontakte': NetworkType.vk };
+        type Translates = { [network in UloginNetwork]: NetworkType };
+        const translates: Translates = { 'vkontakte': NetworkType.vk };
         return translates[network];
     }
 
-    private uloginUserToIncognito(
-        user: UloginUser,
-        type: NetworkType,
-    ): Incognito {
+    private uloginUserToIncognito(user: UloginUser): Incognito {
         return {
-            type,
+            type: this.translateUloginNetwork(user.network),
             name: `${user.first_name} ${user.last_name}`,
             photo: user.photo,
             uid: user.uid,

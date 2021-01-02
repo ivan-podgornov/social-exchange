@@ -7,7 +7,7 @@ import type { CheckerOptions } from '../checker-options';
 import { LikesOfferChecker } from './likes-offer-checker';
 import { RepostsOfferChecker } from './reposts-offer-checker';
 import { FollowersOfferChecker } from './followers-offer-checker';
-import { SubscribesOfferChecker } from './subscribes-offer-checker';
+import { FriendsOfferChecker } from './friends-offer-checker';
 
 @Injectable()
 export class VkOffersChecker implements Checker {
@@ -42,14 +42,11 @@ export class VkOffersChecker implements Checker {
 
     getChecker(options: CheckerOptions) {
         switch (options.offer.type) {
-            case OfferType.likes:
-                return new LikesOfferChecker(this.vkService);
-            case OfferType.reposts:
-                return new RepostsOfferChecker(this.vkService);
-            case OfferType.followers:
-                return new FollowersOfferChecker(this.vkService);
-            default:
-                return new SubscribesOfferChecker(this.vkService);
+            case OfferType.likes: return new LikesOfferChecker(this.vkService);
+            case OfferType.reposts: return new RepostsOfferChecker(this.vkService);
+            case OfferType.friends: return new FriendsOfferChecker(this.vkService);
+            case OfferType.followers: return new FollowersOfferChecker(this.vkService);
+            default: throw new Error('Неизвестный тип оффера');
         }
     }
 

@@ -22,9 +22,9 @@ export class SocketIOGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     async handleConnection(socket: Socket) {
         try {
-            const { network, user } = await this.auth(socket);
+            const { profile, user } = await this.auth(socket);
             const connection: Connection = {
-                network,
+                profile,
                 user,
                 id: socket.id,
                 emitEvent: socket.emit.bind(socket),

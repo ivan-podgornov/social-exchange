@@ -1,5 +1,5 @@
 import { JwtGuard } from '../auth/jwt.guard';
-import { Network as WithNetwork } from '../networks/network.decorator';
+import { Profile as WithProfile } from '../profiles/profile.decorator';
 import { ExecutionsService } from './executions.service';
 
 import {
@@ -21,9 +21,9 @@ export class ExecutionsController {
 
     @Post()
     check(
-        @WithNetwork() network: Profile,
+        @WithProfile() profile: Profile,
         @Body() body: ExecutionsCheckerOptions,
     ) {
-        return this.executionsService.check(network, body.dispensesIds);
+        return this.executionsService.check(profile, body.dispensesIds)();
     }
 }

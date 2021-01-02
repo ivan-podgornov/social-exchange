@@ -12,6 +12,7 @@ import { Resource } from '../vk/resource';
 import {
     OfferConstructorOptions,
     OfferStatus,
+    OfferType,
     User,
 } from '@social-exchange/types';
 
@@ -22,9 +23,9 @@ import {
     right,
 } from 'fp-ts/Either';
 
-type PreparedOffer = Omit<OfferEntity, 'id'|'owner'>;
-type PrepareOptions = {
-    offer: OfferConstructorOptions,
+type PreparedOffer = Omit<OfferEntity<OfferType>, 'id'|'owner'>;
+type PrepareOptions<OT extends OfferType> = {
+    offer: OfferConstructorOptions<OT>,
     owner: User,
     resource: Resource,
 };
@@ -33,13 +34,13 @@ type PrepareOptions = {
 export class OffersConstructor {
     constructor(
         @InjectRepository(OfferEntity)
-        private offers: Repository<OfferEntity>,
+        private offers: Repository<OfferEntity<OfferType>>,
 
         private infoResolver: InfoResolver,
         private offersCheckerService: OffersChecker,
     ) {}
 
-    async construct(options: OfferConstructorOptions, owner: User) {
+    async construct<OT extends OfferType>(options: OfferConstructorOptions<OT>, owner: User) {
         const checkerOptions = new CheckerOptions(options, owner);
         const resource = await this.offersCheckerService.check(checkerOptions);
         if (isLeft(resource)) return resource;
@@ -55,7 +56,7 @@ export class OffersConstructor {
             const offer = this.offers.create({ ...prepared });
             await this.offers.save(offer);
             offer.countExecutions = 0;
-            return right(offer) as Either<Error, OfferEntity>;
+            return right(offer) as Either<Error, OfferEntity<OT>>;
         };
 
         const offer = await promiseChain(creator)(prepared);
@@ -63,7 +64,7 @@ export class OffersConstructor {
     }
 
     /** Готовит информацию об оффере */
-    private async prepare(options: PrepareOptions) {
+    private async prepare<OT extends OfferType>(options: PrepareOptions<OT>) {
         const { offer, owner, resource } = options;
         const [cover, counter, created] =
             await this.infoResolver.resolve(resource, offer.type);

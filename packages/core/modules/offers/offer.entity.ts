@@ -16,7 +16,7 @@ import {
 } from 'typeorm';
 
 @Entity({ name: 'offers' })
-export class OfferEntity implements Offer {
+export class OfferEntity<OT extends OfferType> implements Offer<OT> {
     @PrimaryGeneratedColumn()
     id!: number;
 
@@ -58,5 +58,5 @@ export class OfferEntity implements Offer {
     status!: OfferStatus;
 
     @Column({ type: 'enum', enum: OfferType })
-    type!: OfferType;
+    type!: OT;
 };
