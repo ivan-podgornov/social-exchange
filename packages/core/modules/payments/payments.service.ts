@@ -39,7 +39,7 @@ export class PaymentsService {
         });
 
         if (this.needHearts(payload, found)) {
-            await this.usersService.giveHearts(ownerId)(sum * 10);
+            await this.usersService.giveHearts(ownerId, sum * 10)();
         }
 
         return right(saved);

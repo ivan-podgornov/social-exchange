@@ -49,7 +49,7 @@ export class OffersService {
         const afterCreating = async (entity: OfferEntity<OT>): Promise<Result> => {
             const offer = this.toJson(entity);
             const price = this.priceCalculator.calculate(offer);
-            await this.usersService.takeHearts(owner)(price);
+            await this.usersService.takeHearts(owner, price)();
             return right({ offer, price });
         };
 
@@ -127,7 +127,7 @@ export class OffersService {
 
         await Promise.all([
             this.offers.save(offer),
-            this.usersService.giveHearts(initiator)(compensation),
+            this.usersService.giveHearts(initiator, compensation)(),
         ]);
 
         return right({
@@ -202,7 +202,7 @@ export class OffersService {
     }
 
     toJson<OT extends OfferType>(offer: OfferEntity<OT>): Offer<OT> {
-        const { counter, objectCreated, owner, ownerId, ...result } = offer;
+        const { counter, objectCreated, ...result } = offer;
         return result;
     }
 };

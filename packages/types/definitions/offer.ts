@@ -1,4 +1,5 @@
 import { NetworkType } from './network';
+import { User } from './user';
 
 export enum OfferStatus {
     active = 'active',
@@ -21,6 +22,8 @@ export type Offer<OT extends OfferType = OfferType> = {
     cover: string,
     link: string,
     networkType: NetworkType,
+    owner: User,
+    ownerId: number,
     status: OfferStatus,
     type: OT,
 };

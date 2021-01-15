@@ -1,7 +1,8 @@
+import { left, right } from 'fp-ts/Either';
+import { Task } from 'fp-ts/Task';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '@social-exchange/types';
-import { left, right } from 'fp-ts/Either';
 import { Repository } from 'typeorm';
 import { UserEntity } from './user.entity';
 
@@ -23,18 +24,19 @@ export class UsersService {
         return user ? right(user) : left(null);
     }
 
-    takeHearts(user: User|number) {
-        return async (amount: number) => {
-            await this.giveHearts(user)(-amount);
-        };
+    takeHearts(user: User|number, amount: number) {
+        return this.giveHearts(user, -amount);
     }
 
-    giveHearts(user: User|number) {
-        return async (amount: number) => {
+    giveHearts(user: User|number, amount: number): Task<number> {
+        return async () => {
+            if (amount === 0) return amount;
             const id = typeof user === 'number' ? user : user.id;
             await this.users.update({ id }, {
                 balance: () => `users.balance + ${amount}`,
             });
+
+            return amount;
         };
     }
 };

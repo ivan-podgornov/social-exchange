@@ -14,6 +14,7 @@ export type Dispense<OT extends OfferType = OfferType> = {
      */
     expires: Date,
     offer: Offer<OT>,
+    recipientId: number,
     reward: number,
     status: DispenseStatus,
     title: string,

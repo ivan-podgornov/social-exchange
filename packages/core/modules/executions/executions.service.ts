@@ -4,7 +4,7 @@ import { array } from 'fp-ts/Array';
 import { pipe } from 'fp-ts/pipeable';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CheckResult, Profile } from '@social-exchange/types';
+import { CheckResult, ExchangeEvent, Profile } from '@social-exchange/types';
 import { Repository } from 'typeorm';
 import { DispenseEntity } from '../dispenses/dispense.entity';
 import { EventsService } from '../events/events.service';
@@ -88,21 +88,16 @@ export class ExecutionsService {
     }
 
     private giveReward(profile: Profile, dispenses: DispenseEntity[]) {
-        const prices = dispenses.map((dispense) => {
-            return this.priceCalculator.calculate({ ...dispense.offer, count: 1 });
-        });
+        return pipe(
+            this.calculateReward(dispenses),
+            (reward) => this.usersService.giveHearts(profile.owner.id, reward),
+        );
+    }
 
-        const reward = prices.reduce((sum, price) => sum + price, 0);
-        const userId = profile.owner.id;
-
-        if (reward) {
-            return pipe(
-                T.fromTask(() => this.usersService.giveHearts(userId)(reward)),
-                T.map(() => reward),
-            );
-        }
-
-        return T.of(reward);
+    private calculateReward(dispenses: DispenseEntity[]) {
+        return dispenses.reduce((reward, dispense) => {
+            return reward + this.priceCalculator.calculate({ ...dispense.offer, count: 1 });
+        }, 0);
     }
 
     private validateDispense(
@@ -133,22 +128,18 @@ export class ExecutionsService {
     }
 
     private emitEvents(dispenses: DispenseEntity[]) {
-        dispenses.forEach((dispense) => {
-            this.eventsService.emit('execution', {
-                details: { offerId: dispense.offerId },
-                important: false,
-                read: false,
-                recipient: dispense.recipient,
-                type: 'execution',
-            });
+        type ExecutionEvent = ExchangeEvent<'execution'>;
+        const getEvent = (dispense: DispenseEntity, forRecipient: boolean): ExecutionEvent => ({
+            details: { offerId: dispense.offerId },
+            important: false,
+            read: false,
+            recipient: forRecipient ? dispense.recipient : dispense.offer.ownerId,
+            type: 'execution',
+        });
 
-            this.eventsService.emit('execution', {
-                details: { offerId: dispense.offer.id },
-                important: false,
-                read: false,
-                recipient: dispense.offer.ownerId,
-                type: 'execution',
-            });
+        dispenses.forEach((dispense) => {
+            this.eventsService.emit('execution', getEvent(dispense, true));
+            this.eventsService.emit('execution', getEvent(dispense, false));
         });
     }
 
